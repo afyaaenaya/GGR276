@@ -1,0 +1,146 @@
+---
+title: "GGR276 Lab 2 Part 2 Sampling Data and Inferential Statistics (35 marks)"
+author: "Afyaa"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Part B1. Sampling Data
+## Import Data
+
+If your R Markdown is **NOT** in the same folder as your data, please set your working directory using `setwd()` first. Here is an example if you are using ***Medusa*** `setwd("\\medusa\StudentWork\(Your UTOR ID)\GGR276\Lab1")` and if you are using your ***own computer*** 'setwd(C:/Users/arob1/Documents/SummerCourseInstructor/Summer2024_FT/Assignment2)'. You will need to change the code to reflect your personal directory. Then load your data. When loading in the data try to get your 'Data variable name' short and easy to type! If you change it from what is listed in the rmarkdown instructions you will need to change it. 
+
+We are loading in a new dataset on Global Historical Tsunamis. Please reading Part B in the lab document for additional information. The lab document also includes the webpage link to this dataset which provides additional information. 
+
+Once the dataset is loaded, you will need to investigate the dataset to determine if you have any NA values. It is also recommended you determine the descriptive statistics before proceeding. We are building on the skills you learned in lab 1. This includes summary statistics and filtering your data. In statistics, each step builds on the previous.
+
+
+```{r import-data, echo = TRUE}
+tsunami_events <- read.csv("tsunami_events.csv", sep = ';', header = TRUE)
+
+```
+View your data to determine the descriptive statistics for all of the variables in this dataframe; are you missing any latitude and longitude data points?:
+
+Yes, we are missing 375 latitude values and 376 longitude values.
+```{r}
+summary(tsunami_events)
+```
+
+Now that we have looked at the dataframe and know some of the summary statistics. We want to filter the data so that we only have events that are associated with an "earthquake" and that are considered not categories -1, 0 and 1 in event validity. Make sure you understand what these categories represent.
+
+```{r}
+#filtering the data to subset the data; we only want to remove all event codes <= 1 (look at the data to see what -1, 0 and 1 represent for events) and has a Tsunami cause code that is "earthquake". You can use either the name or the associated code for this function. Make sure your column headers match what is in the dataframe otherwise you will receive NAN values.
+
+filtered_tsunami_events <- subset(tsunami_events, (Tsunami_event_validity_code > 1 & Tsunami_cause_code == 1))
+View(filtered_tsunami_events)
+
+```
+
+
+## Simple Random Sampling
+First, we will randomly sample 400 records. 
+```{r}
+#change out the dataframe to your filtered dataframe
+random_sample <- filtered_tsunami_events[sample(1:nrow(filtered_tsunami_events), size = 400, replace = FALSE), ]
+```
+
+## Stratified Sampling 
+Next, we will try stratified sampling using dplyr package. In this exercise, we are only interested in the Tsunami events in where the earthquake was >= 5.0 and number of runups  >= 1 (NumRunups>= 1). Therefore, we need to create a subset first. . 
+```{r}
+#Create a subset consisting only Chile with number of runups greater than 1. You will need to use your dataframe name
+subset_tsunami <- subset(filtered_tsunami_events, (Earthquake.Magnitude >= 5.0) & (NumRunups >= 1))
+
+#Stratified Sampling
+library(dplyr)
+stratified_sample <- subset_tsunami %>%
+  group_by(Tsunami_event_validity_code) %>%
+  sample_n(size = 50, replace = FALSE) %>%
+  ungroup()
+```
+```
+
+(4 marks) **Q9** Now, it is your turn. Please create a stratified sample consisting of Year of event >= 0 Yrs BP, with an earthquake magnitude >= 5.0 and removing all NAs from maximum water height. For the stratified sample you will be using the event validity category. For each category, make the sample size equal to 50. To make the result reproducible, please add code `set.seed(123)` prior to your sampling. In your word document please indicate the number of observations in your subset and the number of observations in your stratified sample.  
+
+```{r}
+my_subset_tsunami <- subset(filtered_tsunami_events, (Year >= 0) & (Earthquake.Magnitude >= 5.0) & (!is.na(MaxWaterHeight_m)))
+
+#Stratified Sampling
+set.seed(123)
+library(dplyr)
+my_stratified_sample <- subset_tsunami %>%
+  group_by(Tsunami_event_validity) %>%
+  sample_n(size = 50, replace = FALSE) %>%
+  ungroup()
+``` 
+
+## Compare Sampling Technique
+(4 marks) **Q10** What is the difference between simple random sampling and stratified sampling? In this case, would you use simple random sampling or stratified sampling?   
+
+**Type your response in your word document**  
+# Part B2. Inferential Statistics
+## Two-sample difference of mean test 
+It is not stated in the document - students need to come to lecture or lab. However, the purpose of the lab is sampling and inferential statistics. This means they are using the stratified sample they created in Question 9 for the next part of the lab.
+
+(2 marks) **Q11** Does the mean earthquake magnitude differ between "definite tsunami" and "probable tsunami". Write the null hypothesis and alternate hypothesis?
+
+```{r}
+summary(subset(my_stratified_sample, Tsunami_event_validity == "definite tsunami"))
+
+summary(subset(my_stratified_sample, Tsunami_event_validity == "probable tsunami"))
+```
+
+
+**Type your response in your word document**  
+
+(3 marks) **Q12**	What would happen if you used a parametric difference of mean test on non-parametric data? 
+
+**Type your response in your word document**  
+
+(4 marks - see below for the breakdown) **Q13** Please select an appropriate statistical test, and provide justifications by visualizing the distribution. 
+
+** (2 marks) Type your response in your word document and include the visualization in your word document** 
+```{r}
+
+subset1 <- subset(my_stratified_sample, Tsunami_event_validity == "definite tsunami")
+hist(as.numeric(subset1$Earthquake.Magnitude), main = "Histogram of Earthquake Magnitude for 'Definite Tsunami' Events",xlab = "Magnitude", ylab = "Frequency")
+
+
+subset2 <- subset(my_stratified_sample, Tsunami_event_validity == "probable tsunami")
+hist(as.numeric(subset2$Earthquake.Magnitude), main = "Histogram of Earthquake Magnitude for 'Probable Tsunami' Events",xlab = "Magnitude", ylab = "Frequency")
+
+```
+
+(6 marks - see below for the breakdown) **Q14** Please write R script to conduct the statistic test and interpret the results. 
+
+```{r}
+Definite_Tsunami_Vector <- as.numeric(subset1$Earthquake.Magnitude)
+Probable_Tsunami_Vector <- as.numeric(subset2$Earthquake.Magnitude)
+wilcox.test(Definite_Tsunami_Vector, Probable_Tsunami_Vector)
+```
+
+
+**Type the statistic results and interpretation in the word document (4 marks for the results and interpretation)** 
+
+
+## Three-sample Mean Difference Test
+(8 marks - see below for the break down) **Q15** Please follow the same procedure above in Part.B2 to test whether the means of initial power of photovoltaic, hydroelectric, and biomass plants are the same.
+
+**Type your response in the word document (5 marks)**: 
+
+
+```{r}
+my_stratified_sample$Tsunami_event_validity<-as.factor(my_stratified_sample$Tsunami_event_validity)
+
+anova_result <- aov(Earthquake.Magnitude ~ Tsunami_event_validity, data = my_stratified_sample)
+summary(anova_result)
+```
+
+
+**Q16**(4 marks) 16.	Discuss what the Type 1 and Type 2 errors would be for both your 2-sample and 3-sample difference of means tests. Why is it important to understand Type 1 and Type 2 errors? 
+
+**Type your response in the word document**
