@@ -1,0 +1,215 @@
+###Author and date need to be changed; Name - student name and date; done when a new markdown is started.
+#students only need to submit in their html the answers and code for the questions they need to complete/finish..
+---
+title: "GGR276 Lab 1 Part 3 Understanding the GEO in Geostatistics"
+author: "Afyaa Enaya"
+date: "2024-05-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Info about R Markdown
+
+R Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. 
+
+# Part 3A. Non-spatial Statistics
+## Import Data
+
+If your R Markdown is **NOT** in the same folder as your data, please set your working directory using `setwd()` first. Here is an example `setwd("\\medusa\StudentWork\(Your UTOR ID)\GGR276\Lab1")`. You will need to change the code to reflect your personal directory. Otherwise, you may skip this step and continue to **import data** by reading your *WaterRetainingFacilities.csv* file. You may view the data by clicking the WaterRetaining in the Environment window or type code `View(DataSet)`. Click on the little green triangle on the right to **run current chunk**. 
+
+- **For testing where there is any error in any line of code, you should run the script line by line and check how they work carefully.**
+  -	Any errors in your code will be displayed in the bottom left Console window of RStudio, which will help you pinpoint where the error lies.
+  -	If there is an error, try selecting each line of code individually and running the script one by one. This will tell you which line of code is causing the error.
+
+```{r import-data, echo = TRUE}
+WaterRetaining <- read.csv("WaterRetainingFacilities.csv", sep = ';', header = TRUE)
+```
+
+## Descriptive Statistics of ImpoundmentVolume
+Now that we have data imported, we are ready to calculate median, mean, range and quantiles of the Impoundment Volume in cubic meters (m^3)  
+```{r}
+summary(WaterRetaining$ImpoundmentVolume)
+```
+ 
+Next, we will calculate the standard deviation of Impoundment Volume in cubic meters (m^3). If there are missing values in your dataset, simply add `na.rm = TRUE` to your code to tell the R to remove NAs in the calculation. Like this: `sd(WaterRetaining$ImpoundmentVolume, na.rm=TRUE)`. Since there isn't a missing value in this dataset, this line is not necessary here.   
+```{r}
+sd(WaterRetaining$ImpoundmentVolume)
+```
+
+
+## Descriptive Statistics of StorageLevel
+**Question 6**: Now it is your turn to write the code to calculate the median, mean, range, interquartile range, and standard deviation of the Storage Level; review the variable information to find out the units. (2 marks)   
+
+Storage Level:
+median = 17.4 m
+mean = 37.4 m
+range = 284.0 m
+Q1 = 10.5 m
+Q3 = 43.5 m
+```{r, echo=TRUE}
+summary(WaterRetaining$StorageLevel)
+```
+
+
+## Visualize
+Visualize the spread of the Impoundment volume dataset, and answer **Question 7**: According to the boxplot, would you use median or mean as your central tendency measure? Explain and justify your choice? (2 marks)  
+
+**Type your response here**: I would use median as my measure of central tendency.
+Mean is sensitive to extreme values such as the top point in this boxplot. Median is more resistant to the effects of extreme values or outliers. So for data with an extreme value such as this one, median is a better choice.
+
+
+```{r}
+boxplot(WaterRetaining$ImpoundmentVolume)
+```
+
+
+# Part 3B. Mapping Mean and Weighted Mean Centre
+Visualize the locations of the water retaining facilities by Dam Height and the mean and weighted mean centres.   
+```{r}
+plot(WaterRetaining$easting_m, WaterRetaining$northing_m, xlab="Easting (m)", ylab="Northing (m)", main = "Switzerland's Water Retaining Facilities", xlim=c(2488000, 2840000), ylim=c(1085000, 1285000))
+n<-nrow(WaterRetaining[1])
+mc_x<-sum(WaterRetaining$easting_m)/n
+mc_y<-sum(WaterRetaining$northing_m)/n
+points(mc_x,mc_y,'p',pch=15,cex=2,col="blue")
+wmc_x<-sum(as.numeric(WaterRetaining$DamHeight*WaterRetaining$easting_m))/sum(WaterRetaining$DamHeight)
+wmc_y<-sum(as.numeric(WaterRetaining$DamHeight*WaterRetaining$northing_m))/sum(WaterRetaining$DamHeight)
+points(wmc_x, wmc_y,'p',pch=15,cex=2,col='red')
+legend("topright", legend = c("Mean centre", "Weighted mean centre"), pch = c(15,15), col = c("blue","red"))
+```
+
+Notice that after running this script, this script shows all of the dams even for facilities that are non-hydroelectric. Let's filter to keep only the FacilityAim that is for "Hydroelectricity". 
+
+```{r}
+filtered_WaterRetaining <- subset(WaterRetaining, (FacilityAim == "Hydroelectricity"))
+```
+
+Visualize the locations of the Water Retaining Facitilites whose primary function is to produce hydroelectricity include their mean and weighted mean centres on the filtered data. Please adjust the range of x and y axes as well as the symbols to best represent the data.   
+
+- Code for different colours in R can be found here: http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf 
+- Symbol code in R can be found here: http://www.statmethods.net/advgraphs/parameters.html 
+- Use xlim=c(,) or ylim=c(,) in plot() to change the scale of the dataset. Make sure that there isn't much white space and that the legend does not cover the data points. You can also change the position of the legend. 
+
+```{r}
+plot(filtered_WaterRetaining$easting_m, filtered_WaterRetaining$northing_m, xlab="Easting (m)", ylab="Northing (m)", main = "Switzerland's Hydroelectric Water Retaining Facilities", xlim=c(2487000, 2840000), ylim=c(1085000, 1285000))
+n<-nrow(filtered_WaterRetaining[1])
+mc_x<-sum(filtered_WaterRetaining$easting_m)/n
+mc_y<-sum(filtered_WaterRetaining$northing_m)/n
+points(mc_x,mc_y,'p',pch=16,cex=1.5,col="pink1")
+wmc_x<-sum(as.numeric(filtered_WaterRetaining$DamHeight*filtered_WaterRetaining$easting_m))/sum(filtered_WaterRetaining$DamHeight)
+wmc_y<-sum(as.numeric(filtered_WaterRetaining$DamHeight*filtered_WaterRetaining$northing_m))/sum(filtered_WaterRetaining$DamHeight)
+points(wmc_x, wmc_y,'p',pch=16,cex=1.5,col="deeppink1")
+legend("topleft", legend = c("Mean centre", "Weighted mean centre"), pch = c(16,16), col = c("pink1","deeppink1"))
+```
+
+
+**Question 8**: Produce comments (i.e., a detailed explanation for each parameter in the code) that describes the execution of the statements given to you in the WaterRetaining example. Make sure you provide a description for each set of statements and organize your answer in a manner similar to the following example. (16 marks)
+
+Example: `setwd ("\\medusa\StudentWork\(Your UTOR ID)\GGR276\Lab1")`
+
+The `setwd()` command tells R the current folder to look into when searching for data, saving outputs etc.
+
+Explain what is occurring in each of the following lines of code (2 marks each):
+
+a) `WaterRetaining <- read.csv("WaterRetainingFacilities.csv", sep = ',', header = TRUE)`
+b) `plot(WaterRetaining$easting_m, WaterRetaining$northing_m, xlab="Easting (m)", ylab="Northing (m)", main = "Switzerland's Water Retaining Facilities", xlim=c(2488000, 2840000), ylim=c(1085000, 1285000))`
+c) `n<-nrow(WaterRetaining[1])`
+d) `mc_x<-sum(WaterRetaining$easting_m)/n`
+   `mc_y<-sum(WaterRetaining$northing_m)/n`
+e) `points(mc_x,mc_y,'p',pch=15,cex=2,col="blue")`
+f) `wmc_x<-sum(as.numeric(WaterRetaining$DamHeight*WaterRetaining$easting_m))/sum(WaterRetaining$DamHeight)`
+   `wmc_y<-sum(as.numeric(WaterRetaining$DamHeight*WaterRetaining$northing_m))/sum(WaterRetaining$DamHeight)`
+g) `legend("topright", legend = c("Mean centre", "Weighted mean centre"), pch = c(15,15), col = c("blue","red"))`
+e) `install.packages("rmarkdown")`
+    `library(rmarkdown)`
+
+**Type your response here**: 
+a) `read.csv()` command tells R to read the data in "WaterRetainingFacilities.csv" file. The separator for the data in the file is set as "," but in my case it was ";" so the code was changed accordingly. `header = TRUE` tells R that this csv file has a header with variables names so they do not get mixed in with the values. The data is then assigned to the variable "WaterRetaining".
+
+b) `plot()` command creates a scatter plot of the data given. The x-values for the data will be retrieved from `WaterRetaining$easting_m` and the y-values from `WaterRetaining$northing_m`. `xlab` and `ylab` set the x-axis and y-axis labels, respectively. `main` sets the scatter plot's main title. `xlim` and `ylim` set the range for the x-axis values and the y-axis values, respectively.
+
+c) `nrow()` returns the number of rows in the dataset. `WaterRetaining[1]` specifies the first column for the row count which is important for incomplete data, but is redundant in this case as all columns will have the same number of rows. `n <-` saves the returned value from `nrow()` into the variable "n"
+
+d) `sum()` command tells R to add all the values in the given set. `sum(WaterRetaining$easting_m)` will return the sum of all "easting_m" values in "WaterRetaining". "WaterRetaining" is the variable we assigned the data from the csv file to. The sum is then divided by "n", the number of rows in "WaterRetaining". This gives the x-coordinate of the mean centre for "WaterRetaining" as the x-coordinate of all points are added then divided by the number of points available. The x-coordinate of the mean centre is assigned to the variable "mc_x".
+   The same process is repeated with "northing_m" values for the y-coordinate of the mean centre which is then assigned to the variable "mc_y".
+   
+e) `points()` adds another set of points to the same plot as the one created by `plot()`. "mc_x" and "mc_y" are the x- and y-coordinates of the points, respectively. Since "mc_x" and "mc_y" represent the mean centre, the point being plotted is the mean centre of "WaterRetaining". "p" specifies that the point being added is a point and not, for example, a line. `pch = 15` specifies the symbol that should be used for this point. `cex = 2` gives a size for the point, in this case making it bigger. `col ="blue"` specifies that the colour of the point added should be blue.
+
+f) The `sum()` function will add all the values given to it. `as.numeric()` converts the data given to it into a number. `WaterRetaining$DamHeight*WaterRetaining$easting_m` will multiply every value in "DamHeight" by the "easting_m" value for the same point. That value is then divided by the sum of all values for "DamHeight". This returns the x-coordinate for the weighted mean centre for "WaterRetaining" weighted by dam height. The x-coordinate is assigned to the variable "wmc_x".
+   The same process is repeated with "northing_m" values for the y-coordinate of the weighted mean centre which is then assigned to the variable "wmc_y"
+   
+g) `legend()` adds a legend to the plot created by `plot()`. "topright" specifies the location of the legend within the graph. `legend = c("Mean centre", "Weighted mean centre")` specifies the labels for the symbols represented in the legend. `pch = c(15,15)` specifies the symbols that are represented in the legend and `col = c("blue","red")` gives the colour. The labels, symbols, and colour should be in the same order so they are grouped together on the legend.
+
+e) `install.packages("rmarkdown")` will install the package "rmarkdown" into the IDE RStudio. `library(rmarkdown)` will load the package for use in RStudio.
+
+**Question 9**: What do the mean and weighted mean center tell you about the distribution of the filtered Water Retaining Facility locations and their dam heights? Please explain.  (3 marks)  
+
+**Type your response here**: The mean center shows where the average location of the facilities is. The mean center is near the center of the plot but slightly lower which reflects the high density of facilities in the bottom half of the plot.
+The weighted mean center puts a higher weight on the taller dams (as our weighted mean center is based on Dam Height). The weighted mean center has a lower northing than the mean center, which reveals that the dams with lower northing are on average taller and thus they pull the weighted mean center.
+
+
+## Part 3C. Create and Visualize Subsets
+## Create Subsets
+There are different sources of energy. Do they have the same mean centre? Imagine we are interested in how the distribution of Hydroelectric Water Retaining Facilties with **sm_DamHeights** (Dam Heights less than the median) differ from those with **lrg_DamHeights** (Dam Heights greater than or equal to the median). To do this, we will split the WaterRetaining dataset into two subsets. One subset will only contain Dam Heights using **sm_DamHeights** as the primary source and the other will contain only those with **lrg_DamHeights** as the primary source.   
+```{r}
+summary(filtered_WaterRetaining$DamHeight)
+
+sm_DamHeights<- subset(filtered_WaterRetaining, (filtered_WaterRetaining$DamHeight < 23.60))
+lrg_DamHeights <- subset(filtered_WaterRetaining, (filtered_WaterRetaining$DamHeight >= 23.60))
+```
+
+Once created, the subset can be viewed in the Console by calling the object (sm_DamHeights) using `View(sm_Damheights)`. If you want to know the number of Small Dam Heights, you can run: `nrow(sm_DamHeights[1])`.
+
+## Visualize Subsets
+**Question 10**: Show the Switzerland Water Retaining Facilities scatter plot using the subset data that you created. Remember to overlay the subsets on the original data to see the distribution of the subset. Use a different color for the subsets and the original dataset. Also plot the mean centres for the entire dataset and the subsets. Be sure to include a legend, axis titles (with units), and a main title. Include your name and student number in brackets at the end of your main title. Please do not show irrelevant information on the graph. Please also type your code in the code chunk below.  (10 marks)       
+
+```{r}
+plot(WaterRetaining$easting_m, WaterRetaining$northing_m,pch=20 ,xlab="Easting (m)", ylab="Northing (m)", main = "Switzerland's Water Retaining Facilities [Afyaa Enaya, 1009271208]", xlim=c(2460000, 2840000), ylim=c(1085000, 1360000))
+n<-nrow(WaterRetaining[1])
+
+points(lrg_DamHeights$easting_m, lrg_DamHeights$northing_m,pch=20, col="darkmagenta")
+points(sm_DamHeights$easting_m, sm_DamHeights$northing_m,pch=20, col="gold4")
+nsubsets <- nrow(lrg_DamHeights) ##lrg_DamHeights and sm_DamHeights have the same n since they were based on the median
+
+mc_x<-sum(WaterRetaining$easting_m)/n
+mc_y<-sum(WaterRetaining$northing_m)/n
+points(mc_x,mc_y,'p',pch=15,cex=1,col="blue")
+
+lrgmc_x <- sum(lrg_DamHeights$easting_m)/nsubsets
+lrgmc_y <- sum(lrg_DamHeights$northing_m)/nsubsets
+points(lrgmc_x, lrgmc_y,'p',pch=15,cex=1,col='violet')
+
+
+smmc_x <- sum(sm_DamHeights$easting_m)/nsubsets
+smmc_y <- sum(sm_DamHeights$northing_m)/nsubsets
+points(smmc_x, smmc_y,'p',pch=15,cex=1,col='gold')
+
+legend("topleft",cex = 0.7,legend = c("Hydroelectric facilities with dam height >= median", "Hydroelectric facilities with dam height < median","Mean centre", "Hydroelectric facilities with dam height >= median mean centre", "Hydroelectric facilities with dam height < median mean centre"), pch = c(20, 20, 15, 15, 15), col = c("darkmagenta","gold3","blue","violet","gold"))
+```
+
+
+# Part 3D. Dispersion of Subsets
+## Standard Deviation of Subsets
+So far, we have measured the central tendency of the spatial data. How about dispersion? Standard deviation is a measure of dispersion that can be used to assess the distribution of spatial data. To calculate the orthogonal dispersion (east-west, north-south) associated with filtered_WaterRetaining dataset, we will use sd() command applied on easting and northing, respectively. Please do the same for the subsets in Question 11. 
+```{r}
+sd(filtered_WaterRetaining$easting_m)
+sd(filtered_WaterRetaining$northing_m)
+```
+
+
+**Question 11**: Please show your code as well as the calculated standard deviation in your R Markdown. Provide a concise conclusion regarding the orthogonal dispersion for Water Retaining Facilities dataset and subsets. These conclusions should include a short description of the dispersion and a comparison (i.e. Water Retaining Hydroelectric Facilities (filtered) vs. Small Dam Heights vs. Large Dam Heights). Remember to include units of measurement in your response and round to one decimal place. Finally why was median used to subset the data versus the mean?  (6 marks)
+
+```{r}
+sd(sm_DamHeights$easting_m)
+sd(sm_DamHeights$northing_m)
+
+sd(lrg_DamHeights$easting_m)
+sd(lrg_DamHeights$northing_m)
+```
+
+**Type your response here**: The easting for the datasets are around the same range. The northing on the other hand shows a considerable difference especially between the "sm_DamHeights" and "lrg_DamHeights" datasets. This reflects the higher density of tall dams near the bottom of the plot as the points for tall dams is more dispersed vertically compared to short dams and even all dams.
+Median was used instead of the mean as dam height is not evenly distributed. There are a lot of dams on the shorter end of the range with a few dams in the extreme of height. For unevenly distributed data, the median is a better measure of central tendency as it ensures half our points will be in the lower range and half will be in the higher range. The average's split would have been more heavily affected by the outliers.
